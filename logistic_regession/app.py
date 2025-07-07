@@ -14,6 +14,7 @@ X = cancer.data
 y = cancer.target
 
 df = pd.DataFrame(X, columns=cancer.feature_names)
+df['target'] = y
 
 # Identify the Categories
 
@@ -32,10 +33,10 @@ print(df.duplicated().sum())
 # Feature Selection
 
 ## heat map
-plt.figure(figsize=(10, 10))
-sb.heatmap(df.corr(), cmap='coolwarm')
-plt.title("Feature Correlation")
-plt.show()
+# plt.figure(figsize=(10, 10))
+# sb.heatmap(df.corr(), cmap='coolwarm')
+# plt.title("Feature Correlation")
+# plt.show()
 
 # Training
 
@@ -53,9 +54,33 @@ model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
 
+
+
+# Evaluation
+
+## Unmanipulated input data results
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
 print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
-# Evaluation
+## with feature selection
 
+correlations = df.corr()['target'].drop('target').sort_values(ascending=False)
+
+top_features = correlations.abs().sort_values(ascending=False).head(10).index.tolist()
+
+X_selected = df[top_features]
+X_train, X_test, y_train, y_test = train_test_split(
+    X_selected, y, test_size=0.2, random_state=42
+)
+
+# Retrain model with selected features
+model = LogisticRegression(max_iter=10000)
+model.fit(X_train, y_train)
+
+# Predict again
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
